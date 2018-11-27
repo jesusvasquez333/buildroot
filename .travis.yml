@@ -21,7 +21,7 @@ before_script:
 
 script:
   # Build docker image
-  - travis_wait docker build -q -t $DOCKER_IMAGE_NAME .;
+  - travis_wait docker build -t $DOCKER_IMAGE_NAME .;
 
 deploy:
   provider: script
