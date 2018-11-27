@@ -1,0 +1,33 @@
+services:
+  - docker
+
+git:
+  # Remove the --depth flag from git clone used by travis
+  depth: false
+
+env:
+  global:
+    - DOCKER_ORG_NAME=jesusvasquez333
+    - DOCKER_REPO=buildroot
+
+before_install:
+  # Prepare enviroment
+  - export DOCKER_TAG=`git describe --tags`
+  - export DOCKER_IMAGE_NAME=$DOCKER_ORG_NAME/$DOCKER_REPO
+
+before_script:
+  # Login to docker
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
+
+script:
+  # Build docker image
+  - travis_wait docker build -q -t $DOCKER_IMAGE_NAME .;
+
+deploy:
+  provider: script
+  script:
+     # Upload docker image (as tagged and latest version)
+     - docker push $DOCKER_IMAGE_NAME;
+     - docker tag $DOCKER_IMAGE_NAME $DOCKER_IMAGE_NAME:$DOCKER_TAG;
+     - docker push $DOCKER_IMAGE_NAME:$DOCKER_TAG;
+
