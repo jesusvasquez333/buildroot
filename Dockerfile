@@ -26,3 +26,11 @@ RUN ./site/scripts/br-installconf.sh -a ${ARCH}
 
 # Build
 RUN make
+
+# Prepare building area
+ENV BUILD_HOME /home/build
+RUN mkdir -p ${BUILD_HOME}
+WORKDIR ${BUILD_HOME}
+
+# Run make as default command
+CMD ["make"]
