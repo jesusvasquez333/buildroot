@@ -25,7 +25,7 @@ WORKDIR buildroot
 RUN ./site/scripts/br-installconf.sh -a ${ARCH}
 
 # Build
-RUN make
+RUN make --quiet
 
 # Prepare enviroment
 ENV CROSS_COMPILE ${TOP}/${BR_VER}/host/linux-${ARCH}/${ARCH}/usr/bin/${ARCH}-buildroot-linux-gnu-
