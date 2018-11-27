@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
 
-RUN apt update && apt -y install bzip2 wget make gcc g++ patch cpio python unzip rsync bc git locales
+RUN apt-get update && apt-get -y install bzip2 wget make gcc g++ patch cpio python unzip rsync bc git locales
 RUN locale-gen en_US.UTF-8
 
 ENV TOP /usr/src/buildroot
