@@ -1,0 +1,138 @@
+*** linux-3.14.12/arch/arm/mach-zynq/slcr.c.orig	2014-07-09 11:18:37.000000000 -0700
+--- linux-3.14.12/arch/arm/mach-zynq/slcr.c	2014-11-13 20:39:51.009221236 -0800
+***************
+*** 22,29 ****
+--- 22,32 ----
+  /* register offsets */
+  #define SLCR_UNLOCK_OFFSET		0x8   /* SCLR unlock register */
+  #define SLCR_PS_RST_CTRL_OFFSET		0x200 /* PS Software Reset Control */
++ #define SLCR_FPGA_RST_CTRL_OFFSET	0x240 /* FPGA Software Reset Control */
++ 
+  #define SLCR_A9_CPU_RST_CTRL_OFFSET	0x244 /* CPU Software Reset Control */
+  #define SLCR_REBOOT_STATUS_OFFSET	0x258 /* PS Reboot Status */
++ #define SLCR_LVL_SHFTR_EN_OFFSET	0x900 /* Level Shifters Enable */
+  
+  #define SLCR_UNLOCK_MAGIC		0xDF0D
+  #define SLCR_A9_CPU_CLKSTOP		0x10
+***************
+*** 56,61 ****
+--- 59,95 ----
+  }
+  
+  /**
++  * zynq_slcr_init_preload_fpga - Disable communication from the PL to PS.
++  */
++ void zynq_slcr_init_preload_fpga(void)
++ {
++ 	/* Assert FPGA top level output resets */
++ 	writel(0xF, zynq_slcr_base + SLCR_FPGA_RST_CTRL_OFFSET);
++ 
++ 	/* Disable level shifters */
++ 	writel(0, zynq_slcr_base + SLCR_LVL_SHFTR_EN_OFFSET);
++ 
++ 	/* Enable output level shifters */
++ 	writel(0xA, zynq_slcr_base + SLCR_LVL_SHFTR_EN_OFFSET);
++ }
++ EXPORT_SYMBOL(zynq_slcr_init_preload_fpga);
++ 
++ /**
++  * zynq_slcr_init_postload_fpga - Re-enable communication from the PL to PS.
++  */
++ void zynq_slcr_init_postload_fpga(void)
++ {
++ 	/* Enable level shifters */
++ 	writel(0xf, zynq_slcr_base + SLCR_LVL_SHFTR_EN_OFFSET);
++ 
++ 	/* Deassert AXI interface resets */
++ 	writel(0, zynq_slcr_base + SLCR_FPGA_RST_CTRL_OFFSET);
++ }
++ EXPORT_SYMBOL(zynq_slcr_init_postload_fpga);
++ 
++ 
++ 
++ /**
+   * zynq_slcr_cpu_start - Start cpu
+   * @cpu:	cpu number
+   */
+*** linux-3.14.12/arch/arm/mach-zynq/common.h.orig	2014-07-09 11:18:37.000000000 -0700
+--- linux-3.14.12/arch/arm/mach-zynq/common.h	2014-11-13 20:33:43.356161162 -0800
+***************
+*** 33,38 ****
+--- 33,41 ----
+  extern struct smp_operations zynq_smp_ops __initdata;
+  #endif
+  
++ extern void zynq_slcr_init_preload_fpga(void);
++ extern void zynq_slcr_init_postload_fpga(void);
++ 
+  extern void __iomem *zynq_slcr_base;
+  extern void __iomem *zynq_scu_base;
+  
+*** linux-3.14.12/drivers/uio/uio_pdrv_genirq.c.orig	2014-11-13 21:04:25.818246031 -0800
+--- linux-3.14.12/drivers/uio/uio_pdrv_genirq.c	2014-11-13 21:27:14.257049087 -0800
+***************
+*** 148,154 ****
+  	if (!uioinfo->irq) {
+  		ret = platform_get_irq(pdev, 0);
+  		uioinfo->irq = ret;
+! 		if (ret == -ENXIO && pdev->dev.of_node)
+  			uioinfo->irq = UIO_IRQ_NONE;
+  		else if (ret < 0) {
+  			dev_err(&pdev->dev, "failed to get IRQ\n");
+--- 148,155 ----
+  	if (!uioinfo->irq) {
+  		ret = platform_get_irq(pdev, 0);
+  		uioinfo->irq = ret;
+! 		/* T.S.: OF method returns -EINVAL! */
+! 		if ( (ret == -ENXIO || ret == -EINVAL) && pdev->dev.of_node)
+  			uioinfo->irq = UIO_IRQ_NONE;
+  		else if (ret < 0) {
+  			dev_err(&pdev->dev, "failed to get IRQ\n");
+***************
+*** 253,258 ****
+--- 254,260 ----
+  
+  #ifdef CONFIG_OF
+  static struct of_device_id uio_of_genirq_match[] = {
++ 	{ .compatible = "generic-uio", },
+  	{ /* This is filled with module_parm */ },
+  	{ /* Sentinel */ },
+  };
+*** linux-3.14.12/drivers/net/ethernet/cadence/macb.c.orig	2014-11-27 11:30:38.622269256 -0800
+--- linux-3.14.12/drivers/net/ethernet/cadence/macb.c	2014-11-27 11:32:06.116274590 -0800
+***************
+*** 1119,1125 ****
+  
+  		desc = &bp->rx_ring[i];
+  		addr = MACB_BF(RX_WADDR, MACB_BFEXT(RX_WADDR, desc->addr));
+! 		dma_unmap_single(&bp->pdev->dev, addr, skb->len,
+  				 DMA_FROM_DEVICE);
+  		dev_kfree_skb_any(skb);
+  		skb = NULL;
+--- 1119,1125 ----
+  
+  		desc = &bp->rx_ring[i];
+  		addr = MACB_BF(RX_WADDR, MACB_BFEXT(RX_WADDR, desc->addr));
+! 		dma_unmap_single(&bp->pdev->dev, addr, bp->rx_buffer_size,
+  				 DMA_FROM_DEVICE);
+  		dev_kfree_skb_any(skb);
+  		skb = NULL;
+*** linux-3.14.12/drivers/iio/Kconfig.orig	2014-11-28 09:39:13.449712778 -0800
+--- linux-3.14.12/drivers/iio/Kconfig	2014-11-28 09:39:44.156788881 -0800
+***************
+*** 34,40 ****
+  	  often to read from the buffer.
+  
+  config IIO_TRIGGERED_BUFFER
+! 	tristate
+  	select IIO_TRIGGER
+  	select IIO_KFIFO_BUF
+  	help
+--- 34,40 ----
+  	  often to read from the buffer.
+  
+  config IIO_TRIGGERED_BUFFER
+! 	tristate "Triggered buffer helpers"
+  	select IIO_TRIGGER
+  	select IIO_KFIFO_BUF
+  	help

@@ -1,0 +1,12 @@
+*** package/gdb/gdb.mk.orig	2014-09-01 04:20:56.000000000 -0700
+--- package/gdb/gdb.mk	2014-09-15 09:54:22.000000000 -0700
+***************
+*** 119,124 ****
+--- 119,125 ----
+  	--without-x \
+  	--enable-threads \
+  	--disable-werror \
++ 	--with-sysroot=$(TARGET_DIR)/ \
+  	--without-included-gettext \
+  	$(GDB_DISABLE_BINUTILS_CONF_OPT) \
+  	--disable-sim

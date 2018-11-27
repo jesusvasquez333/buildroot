@@ -1,0 +1,2 @@
+# Allow blank; disallow root login
+DROPBEAR_ARGS="-B -w"

@@ -1,0 +1,52 @@
+--- linux-3.14.12/kernel/signal.c.orig	2014-12-02 18:50:24.472593199 -0800
++++ linux-3.14.12/kernel/signal.c	2014-12-02 18:56:35.581041811 -0800
+@@ -1340,7 +1340,7 @@
+  * send the signal on exit of the trap.
+  */
+ #ifdef ARCH_RT_DELAYS_SIGNAL_SEND
+-	if (in_atomic()) {
++	if (in_atomic() || irqs_disabled()) {
+ 		if (WARN_ON_ONCE(t != current))
+ 			return 0;
+ 		if (WARN_ON_ONCE(t->forced_info.si_signo))
+--- linux-3.14.12/arch/arm/kernel/signal.c.orig	2014-12-02 18:30:13.275058413 -0800
++++ linux-3.14.12/arch/arm/kernel/signal.c	2014-12-02 18:33:24.727574197 -0800
+@@ -592,6 +593,15 @@
+ 				}
+ 				syscall = 0;
+ 			} else {
++
++#ifdef ARCH_RT_DELAYS_SIGNAL_SEND
++				if (unlikely(current->forced_info.si_signo)) {
++					struct task_struct *t = current;
++					force_sig_info(t->forced_info.si_signo,	&t->forced_info, t);
++					t->forced_info.si_signo = 0;
++				}
++#endif
++
+ 				clear_thread_flag(TIF_NOTIFY_RESUME);
+ 				tracehook_notify_resume(regs);
+ 			}
+--- linux-3.14.12/arch/arm/include/asm/signal.h.orig	2014-12-02 18:28:12.469745395 -0800
++++ linux-3.14.12/arch/arm/include/asm/signal.h	2014-12-02 18:29:53.760172049 -0800
+@@ -1,6 +1,20 @@
+ #ifndef _ASMARM_SIGNAL_H
+ #define _ASMARM_SIGNAL_H
+ 
++/*
++ * Because exceptions run with IRQs 
++ * disabled while calling arm_notify_die(), but arm_notify_die() may call
++ * force_sig_info() which will grab the signal spin_locks for the
++ * task, which in PREEMPT_RT_FULL are mutexes.  By defining
++ * ARCH_RT_DELAYS_SIGNAL_SEND the force_sig_info() will set
++ * TIF_NOTIFY_RESUME and set up the signal to be sent on exit of the
++ * trap.
++ */
++#if defined(CONFIG_PREEMPT_RT_FULL)
++#define ARCH_RT_DELAYS_SIGNAL_SEND
++#endif
++
++
+ #include <uapi/asm/signal.h>
+ 
+ /* Most things should be clean enough to redefine this at will, if care

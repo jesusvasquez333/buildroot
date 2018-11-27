@@ -1,0 +1,355 @@
+*** linux-3.12.24/arch/arm/boot/dts/zynq-zybo.dts.orig	1969-12-31 16:00:00.000000000 -0800
+--- linux-3.12.24/arch/arm/boot/dts/zynq-zybo.dts	2015-03-06 17:35:39.027560471 -0800
+***************
+*** 0 ****
+--- 1,350 ----
++ /dts-v1/;
++ 
++ / {
++ 	#address-cells = <0x1>;
++ 	#size-cells = <0x1>;
++ 	compatible = "xlnx,zynq-zybo", "xlnx,zynq-7000";
++ 	model = "Digilent Zynq Zybo Development Board";
++ 
++ 	chosen {
++ 		bootargs = "console=ttyPS0,115200 earlyprintk";
++ 	};
++ 
++ 	aliases {
++ 	};
++ 
++ 	memory {
++ 		device_type = "memory";
++ 		reg = <0x0 0x20000000>;
++ 	};
++ 
++ 	cpus {
++ 		#address-cells = <0x1>;
++ 		#size-cells = <0x0>;
++ 
++ 		cpu@0 {
++ 			compatible = "arm,cortex-a9";
++ 			device_type = "cpu";
++ 			reg = <0x0>;
++ 			clocks = <0x1 0x3>;
++ 		};
++ 
++ 		cpu@1 {
++ 			compatible = "arm,cortex-a9";
++ 			device_type = "cpu";
++ 			reg = <0x1>;
++ 			clocks = <0x1 0x3>;
++ 		};
++ 	};
++ 
++ 	pmu {
++ 		compatible = "arm,cortex-a9-pmu";
++ 		interrupts = <0x0 0x5 0x4 0x0 0x6 0x4>;
++ 		interrupt-parent = <0x2>;
++ 		reg = <0xf8891000 0x1000 0xf8893000 0x1000>;
++ 	};
++ 
++ 	amba {
++ 		compatible = "simple-bus";
++ 		#address-cells = <0x1>;
++ 		#size-cells = <0x1>;
++ 		interrupt-parent = <0x2>;
++ 		ranges;
++ 
++ 		interrupt-controller@f8f01000 {
++ 			compatible = "arm,cortex-a9-gic";
++ 			#interrupt-cells = <0x3>;
++ 			#address-cells = <0x1>;
++ 			interrupt-controller;
++ 			reg = <0xf8f01000 0x1000 0xf8f00100 0x100>;
++ 			linux,phandle = <0x2>;
++ 			phandle = <0x2>;
++ 		};
++ 
++ 		cache-controller {
++ 			compatible = "arm,pl310-cache";
++ 			reg = <0xf8f02000 0x1000>;
++ 			arm,data-latency = <0x3 0x2 0x2>;
++ 			arm,tag-latency = <0x2 0x2 0x2>;
++ 			cache-unified;
++ 			cache-level = <0x2>;
++ 		};
++ 
++ 		uart@e0000000 {
++ 			compatible = "xlnx,xuartps";
++ 			status = "disabled";
++ 			clocks = <0x1 0x17 0x1 0x28>;
++ 			clock-names = "ref_clk", "aper_clk";
++ 			reg = <0xe0000000 0x1000>;
++ 			interrupts = <0x0 0x1b 0x4>;
++ 		};
++ 
++ 		uart@e0001000 {
++ 			compatible = "xlnx,xuartps";
++ 			status = "okay";
++ 			clocks = <0x1 0x18 0x1 0x29>;
++ 			clock-names = "ref_clk", "aper_clk";
++ 			reg = <0xe0001000 0x1000>;
++ 			interrupts = <0x0 0x32 0x4>;
++ 		};
++ 
++ 		ethernet@e000b000 {
++ 			compatible = "cdns,gem";
++ 			reg = <0xe000b000 0x4000>;
++ 			status = "disabled";
++ 			interrupts = <0x0 0x16 0x4>;
++ 			clocks = <0x1 0x1e 0x1 0x1e 0x1 0xd>;
++ 			clock-names = "pclk", "hclk", "tx_clk";
++ 		};
++ 
++ 		ethernet@e000c000 {
++ 			compatible = "cdns,gem";
++ 			reg = <0xe000c000 0x4000>;
++ 			status = "disabled";
++ 			interrupts = <0x0 0x2d 0x4>;
++ 			clocks = <0x1 0x1f 0x1 0x1f 0x1 0xe>;
++ 			clock-names = "pclk", "hclk", "tx_clk";
++ 		};
++ 
++ 		ps7-sdhci@e0100000 {
++ 			compatible = "arasan,sdhci-8.9a";
++ 			status = "okay";
++ 			clock-names = "clk_xin", "clk_ahb";
++ 			clocks = <0x1 0x15 0x1 0x20>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x18 0x4>;
++ 			reg = <0xe0100000 0x1000>;
++ 		};
++ 
++ 		ps7-sdhci@e0101000 {
++ 			compatible = "arasan,sdhci-8.9a";
++ 			status = "disabled";
++ 			clock-names = "clk_xin", "clk_ahb";
++ 			clocks = <0x1 0x16 0x1 0x21>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x2f 0x4>;
++ 			reg = <0xe0101000 0x1000>;
++ 		};
++ 
++ 		slcr@f8000000 {
++ 			compatible = "xlnx,zynq-slcr";
++ 			reg = <0xf8000000 0x1000>;
++ 
++ 			clocks {
++ 				#address-cells = <0x1>;
++ 				#size-cells = <0x0>;
++ 
++ 				clkc {
++ 					#clock-cells = <0x1>;
++ 					compatible = "xlnx,ps7-clkc";
++ 					ps-clk-frequency = <0x2faf080>;
++ 					clock-output-names = "armpll", "ddrpll", "iopll", "cpu_6or4x", "cpu_3or2x", "cpu_2x", "cpu_1x", "ddr2x", "ddr3x", "dci", "lqspi", "smc", "pcap", "gem0", "gem1", "fclk0", "fclk1", "fclk2", "fclk3", "can0", "can1", "sdio0", "sdio1", "uart0", "uart1", "spi0", "spi1", "dma", "usb0_aper", "usb1_aper", "gem0_aper", "gem1_aper", "sdio0_aper", "sdio1_aper", "spi0_aper", "spi1_aper", "can0_aper", "can1_aper", "i2c0_aper", "i2c1_aper", "uart0_aper", "uart1_aper", "gpio_aper", "lqspi_aper", "smc_aper", "swdt", "dbg_trc", "dbg_apb";
++ 					fclk-enable = <0xf>;
++ 					linux,phandle = <0x1>;
++ 					phandle = <0x1>;
++ 				};
++ 			};
++ 		};
++ 
++ 		timer@f8f00200 {
++ 			compatible = "arm,cortex-a9-global-timer";
++ 			reg = <0xf8f00200 0x20>;
++ 			interrupts = <0x1 0xb 0x301>;
++ 			interrupt-parent = <0x2>;
++ 			clocks = <0x1 0x4>;
++ 		};
++ 
++ 		ttc0@f8001000 {
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0xa 0x4 0x0 0xb 0x4 0x0 0xc 0x4>;
++ 			compatible = "cdns,ttc";
++ 			clocks = <0x1 0x6>;
++ 			reg = <0xf8001000 0x1000>;
++ 		};
++ 
++ 		ttc1@f8002000 {
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x25 0x4 0x0 0x26 0x4 0x0 0x27 0x4>;
++ 			compatible = "cdns,ttc";
++ 			clocks = <0x1 0x6>;
++ 			reg = <0xf8002000 0x1000>;
++ 		};
++ 
++ 		scutimer@f8f00600 {
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x1 0xd 0x301>;
++ 			compatible = "arm,cortex-a9-twd-timer";
++ 			reg = <0xf8f00600 0x20>;
++ 			clocks = <0x1 0x4>;
++ 		};
++ 
++ 		ps7-i2c@e0004000 {
++ 			clock-frequency = <0x61a80>;
++ 			clocks = <0x1 0x26>;
++ 			compatible = "cdns,i2c-r1p10";
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x19 0x4>;
++ 			reg = <0xe0004000 0x1000>;
++ 			#address-cells = <0x1>;
++ 			#size-cells = <0x0>;
++ 			status = "okay";
++ 
++ 			m24c02_eeprom@50 {
++ 				compatible = "at,24c02";
++ 				reg = <0x50>;
++ 			};
++ 		};
++ 
++ 		ps7-i2c@e0005000 {
++ 			clock-frequency = <0x61a80>;
++ 			clocks = <0x1 0x27>;
++ 			compatible = "cdns,i2c-r1p10";
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x30 0x4>;
++ 			reg = <0xe0005000 0x1000>;
++ 			#address-cells = <0x1>;
++ 			#size-cells = <0x0>;
++ 			status = "disabled";
++ 		};
++ 
++ 		ps7-gpio@e000a000 {
++ 			#gpio-cells = <0x2>;
++ 			clocks = <0x1 0x2a>;
++ 			compatible = "xlnx,zynq-gpio-1.0";
++ 			emio-gpio-width = <0x40>;
++ 			gpio-controller;
++ 			gpio-mask-high = <0xc0000>;
++ 			gpio-mask-low = <0xfe81>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x14 0x4>;
++ 			reg = <0xe000a000 0x1000>;
++ 		};
++ 
++ 		ps7-xadc@f8007100 {
++ 			clocks = <0x1 0xc>;
++ 			compatible = "xlnx,zynq-xadc-1.00.a";
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x7 0x4>;
++ 			reg = <0xf8007100 0x20>;
++ 		};
++ 
++ 		ps7-dev-cfg@f8007000 {
++ 			clock-names = "ref_clk", "fclk0", "fclk1", "fclk2", "fclk3";
++ 			clocks = <0x1 0xc 0x1 0xf 0x1 0x10 0x1 0x11 0x1 0x12>;
++ 			compatible = "xlnx,zynq-devcfg-1.0";
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x8 0x4>;
++ 			reg = <0xf8007000 0x100>;
++ 		};
++ 
++ 		enet@e000b000 {
++ 			#address-cells = <0x1>;
++ 			#size-cells = <0x0>;
++ 			compatible = "xlnx,ps7-ethernet-1.00.a";
++ 			clocks = <0x1 0xd 0x1 0x1e>;
++ 			clock-names = "ref_clk", "aper_clk";
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x16 0x4>;
++ 			phy-mode = "rgmii-id";
++ 			reg = <0xe000b000 0x1000>;
++ 			status = "okay";
++ 			phy-handle = <0x3>;
++ 
++ 			mdio {
++ 				#address-cells = <0x1>;
++ 				#size-cells = <0x0>;
++ 
++ 				phy@1 {
++ 					compatible = "realtek,RTL8211E";
++ 					device-type = "ethernet-phy";
++ 					reg = <0x1>;
++ 					linux,phandle = <0x3>;
++ 					phandle = <0x3>;
++ 				};
++ 			};
++ 		};
++ 
++ 		enet@e000c000 {
++ 			#address-cells = <0x1>;
++ 			#size-cells = <0x0>;
++ 			compatible = "xlnx,ps7-ethernet-1.00.a";
++ 			clocks = <0x1 0xe 0x1 0x1f>;
++ 			clock-names = "ref_clk", "aper_clk";
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x2d 0x4>;
++ 			phy-mode = "rgmii-id";
++ 			reg = <0xe000b000 0x1000>;
++ 			status = "disabled";
++ 		};
++ 
++ 		ps7-axislv0@43c00000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c00000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x1d 0x4>;
++ 		};
++ 
++ 		ps7-axislv1@43c01000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c01000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x1e 0x4>;
++ 		};
++ 
++ 		ps7-axislv2@43c02000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c02000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x1f 0x4>;
++ 		};
++ 
++ 		ps7-axislv3@43c03000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c03000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x20 0x4>;
++ 		};
++ 
++ 		ps7-axislv4@43c04000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c04000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x21 0x4>;
++ 		};
++ 
++ 		ps7-axislv5@43c05000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c05000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x22 0x4>;
++ 		};
++ 
++ 		ps7-axislv6@43c06000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c06000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x23 0x4>;
++ 		};
++ 
++ 		ps7-axislv7@43c07000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c07000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x24 0x4>;
++ 		};
++ 
++ 		ps7-axislv8@43c08000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c08000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x34 0x4>;
++ 		};
++ 
++ 		ps7-axislv9@43c09000 {
++ 			compatible = "generic-uio";
++ 			reg = <0x43c09000 0x1000>;
++ 			interrupt-parent = <0x2>;
++ 			interrupts = <0x0 0x35 0x4>;
++ 		};
++ 	};
++ };

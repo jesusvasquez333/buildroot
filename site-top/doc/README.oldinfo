@@ -1,0 +1,46 @@
+T.S. 2012/3... (OLD / POSSIBLY OUTDATED INFO)
+ - we keep buildroot, busybox, uclibc, linux configuration files
+   in 'site'. If either 'live' configuration is changed (via 'make xxx-menuconfig')
+   then the 'live' .config file must be copied from the output/build/xxx area
+   back to 'site'.
+ - use file-system skeleton from 'site'. Here's a description of relevant mods:
+
+    - set /etc/TZ to "PST8PDT,M3.2.0,M11.1.0"
+    - /etc/init.d/S40network contains logic to compute the boot interface name
+	  and add a /etc/network/interfaces entry for it.
+	- /usr/share/udhcpc/site.script is a modified version of 'default.script'
+      which also takes care of setting
+         - hostname
+         - ntp server info
+
+   NOTE: site/fs_skeleton is only used/installed to 'output' area ONCE (or
+         after 'make clean'. Intermediate modifications must be propagated
+         to the 'output/target/' area.
+ - all patches (xxx.patch) from 'site/' directory must be copied to relevant
+   place in buildroot area:
+		busybox-xxx.patch -> <br_top>/package/busybox
+
+   patches to buildroot itself (site/buildroot-xxx.diff) must be applied
+   manually to buildroot.
+
+   This must be done *before* executing 'make' in buildroot-top, of course.
+
+ - I observed nasty freezes (mostly just before 'init' is executed but
+   sometimes a little bit later) on the AMC1000:
+     - only if SMP active (maxcpus=1 made the problem go away).
+   I could finally narrow it down to the kernel option 'CONFIG_ACPI_PROCESSOR'
+   (Comment: "This driver installs ACPI as the idle handler for linux and
+              uses ACPI C2 and C3 processor states to save power on systems
+              that support it. ... ")
+   If I switch this option off then the problem doesn't occur.
+   Finally, I could also work around this problem by using the 'idle='
+   command line option. If I set 'idle=poll' or better: 'idle=halt' then
+   the problem does not occur (even with both CPUs running)
+
+   The 'intel_idle' driver does not support the AMC1000 CPU ('intel_idle:
+   does not run on family 6 model 15').
+
+   Ah - and the problem only occurred if I configured with 'fully preemptible
+   kernel' (CONFIG_PREEMPT_RT_FULL). If I configured for CONFIG_PREEMPT_RTB
+   then the problem did not show.
+

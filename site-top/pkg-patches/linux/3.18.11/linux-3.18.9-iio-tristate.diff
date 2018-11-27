@@ -1,0 +1,19 @@
+*** linux-3.18.9/drivers/iio/Kconfig.orig	2014-11-28 09:39:13.449712778 -0800
+--- linux-3.18.9/drivers/iio/Kconfig	2014-11-28 09:39:44.156788881 -0800
+***************
+*** 34,40 ****
+  	  often to read from the buffer.
+  
+  config IIO_TRIGGERED_BUFFER
+! 	tristate
+  	select IIO_TRIGGER
+  	select IIO_KFIFO_BUF
+  	help
+--- 34,40 ----
+  	  often to read from the buffer.
+  
+  config IIO_TRIGGERED_BUFFER
+! 	tristate "Triggered buffer helpers"
+  	select IIO_TRIGGER
+  	select IIO_KFIFO_BUF
+  	help

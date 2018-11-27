@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# Select interface and rootpath from parameters passed by bootloader:
+# BOOTIF_MAC -- mac address of IF we booted from
+# ROOTPATH   -- rootpath obtained from bootloader
+#
+
+# if 'BOOTIF_MAC' env-var is set (passed by iPXE bootloader on kernel command-
+# line) then find the name of the corresponding linux interface and add a line
+# to /etc/network/interfaces
+
+case "$1" in
+	start)
+
+		if [ -n "$BOOTIF_MAC" ] && ! grep -q BOOTIF_MAC /etc/network/interfaces ; then
+			ifconfig -a | awk '/HWaddr[ ]*'`echo -n $BOOTIF_MAC | tr abcdef ABCDEF`'/{printf("#BOOTIF_MAC %s\nauto %s\niface %s inet dhcp\n", ENVIRON["BOOTIF_MAC"], $1, $1)}' >> /etc/network/interfaces
+			if [ -n "$ROOTPATH" ] ; then
+				echo "  ROOTPATH $ROOTPATH" >> /etc/network/interfaces
+			fi
+		else
+		# fall back on configuring all know NICs with dhcp
+			IFLST=`ifconfig -a | awk '/Ethernet/{printf("%s ",$1)}'`
+			for i in $IFLST; do
+				if ! grep -q "$i" /etc/network/interfaces ; then
+					echo "auto $i" >> /etc/network/interfaces
+					echo "iface $i inet dhcp" >> /etc/network/interfaces
+					# override ROOTPATH for every IF
+					if [ -n "$ROOTPATH" ] ; then
+						echo "  ROOTPATH $ROOTPATH" >> /etc/network/interfaces
+					fi
+				fi
+			done
+		fi
+	;;
+
+	stop)
+		:
+	;;
+
+	*)
+		echo $"Usage: $0 {start|stop}"
+		exit 1;
+	;;
+esac
+
+exit $?

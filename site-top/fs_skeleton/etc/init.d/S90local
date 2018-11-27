@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Handle init script
+#
+
+case "$1" in 
+
+	start)
+
+		echo "Looking for (user) init script"
+		if [ -n "$BOOTCMD" ] ; then
+			echo "Evaluating BOOTCMD: sh -c \"$BOOTCMD\""
+			/bin/sh -c "$BOOTCMD"
+			# Continue here and let then also specify a BOOTFILE
+		fi
+		if [ -z "$BOOTFILE" -a -r /etc/bootfile ] ; then
+			BOOTFILE=`cat /etc/bootfile`
+		fi
+		if [ -n "$BOOTFILE" ] ; then
+			RGX='\(^tftp:[/][/]\)\([^/]*\)\([/]\)\(\([^/]*[/]\)*\)\(.*\)'
+			TFTP_HOST=`echo -n "$BOOTFILE" | sed -n -e "s%$RGX%\2%p"`
+			TFTP_PATH=`echo -n "$BOOTFILE" | sed -n -e "s%$RGX%\4\6%p"`
+			TFTP_FILN=`echo -n "$BOOTFILE" | sed -n -e "s%$RGX%\6%p"`
+			if [ -n "$TFTP_HOST" -a -n "$TFTP_PATH" -a -n "$TFTP_FILN" ] ; then
+				mkdir -p /boot/tftp/
+				BOOTFILE=/boot/tftp/"$TFTP_FILN"
+				echo "Copying BOOTFILE via TFTP to $BOOTFILE"
+				echo "tftp -r $TFTP_PATH -l $BOOTFILE -g $TFTP_HOST && chmod a+x $BOOTFILE"
+				tftp -r $TFTP_PATH -l $BOOTFILE -g $TFTP_HOST && chmod a+x $BOOTFILE
+			fi
+			echo "Executing BOOTFILE: $BOOTFILE"
+			eval exec "$BOOTFILE"
+			echo "Executing bootfile FAILED"
+			exit 1
+		fi
+		echo "No BOOTFILE"
+	;;
+
+	stop)
+		:
+	;;
+
+	*)
+		echo $"usage: $0 {start|stop}"
+		exit 1
+esac
+
+exit $?

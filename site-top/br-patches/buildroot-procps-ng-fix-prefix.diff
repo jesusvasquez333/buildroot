@@ -1,0 +1,17 @@
+procps-ng tweaks the prefixes. When buildroot configures with --prefix=/usr
+then stuff is installed into /usr/bin, /usr/usr/bin. This patch resets
+the prefix so that some programs go into /bin (and overwrite busybox
+implementations) and some go into /usr/bin.
+
+T.S. 11/2014.
+*** package/procps-ng/procps-ng.mk.orig	2014-11-03 17:59:47.000000002 -0800
+--- package/procps-ng/procps-ng.mk	2014-11-03 18:00:29.000000002 -0800
+***************
+*** 17,20 ****
+--- 17,22 ----
+  PROCPS_NG_CONF_OPTS += LIBS=-lintl
+  endif
+  
++ PROCPS_NG_CONF_OPTS += --prefix=/ --exec-prefix=/
++ 
+  $(eval $(autotools-package))

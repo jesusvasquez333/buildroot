@@ -1,0 +1,2 @@
+#!/bin/sh
+ls /etc/site/buildroot*config* | sed -e 's/\(.*\)\(buildroot[-].*\)\([-]config.*\)/\2/'

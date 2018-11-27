@@ -1,0 +1,7 @@
+Special Quirks:
+ - add '-T 5 -t 10' to udhcpc command line options (bb configuration)
+   the express-lpc board or linux driver seems to have a problem: the
+   interface needs to be up for ~20s before anything gets across.
+   (The same problem occurred inside iPXE which we had to patch).
+   But HEY: this could also be caused by the switch?!
+   T.S., 2012/3/26.

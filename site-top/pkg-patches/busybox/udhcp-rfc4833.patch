@@ -1,0 +1,45 @@
+*** busybox-1.23.1/networking/udhcp/common.c.orig	2015-01-27 17:48:58.000000000 +0900
+--- busybox-1.23.1/networking/udhcp/common.c	2015-10-06 18:36:55.175256184 +0900
+***************
+*** 53,58 ****
+--- 53,61 ----
+  	{ OPTION_STRING                           , 0x43 }, /* DHCP_BOOT_FILE     */
+  //TODO: not a string, but a set of LASCII strings:
+  //	{ OPTION_STRING                           , 0x4D }, /* DHCP_USER_CLASS    */
++ #if ENABLE_FEATURE_UDHCP_RFC4833
++ 	{ OPTION_STRING                           , 0x64 }, /* DHCP_POSIX_TZ_STRING     */
++ #endif
+  #if ENABLE_FEATURE_UDHCP_RFC3397
+  	{ OPTION_DNS_STRING | OPTION_LIST         , 0x77 }, /* DHCP_DOMAIN_SEARCH */
+  	{ OPTION_SIP_SERVERS                      , 0x78 }, /* DHCP_SIP_SERVERS   */
+***************
+*** 119,124 ****
+--- 122,130 ----
+  	"tftp" "\0"        /* DHCP_TFTP_SERVER_NAME */
+  	"bootfile" "\0"    /* DHCP_BOOT_FILE      */
+  //	"userclass" "\0"   /* DHCP_USER_CLASS     */
++ #if ENABLE_FEATURE_UDHCP_RFC4833
++ 	"posixtzstring" "\0" /* DHCP_POSIX_TZ_STRING */
++ #endif
+  #if ENABLE_FEATURE_UDHCP_RFC3397
+  	"search" "\0"      /* DHCP_DOMAIN_SEARCH  */
+  // doesn't work in udhcpd.conf since OPTION_SIP_SERVERS
+*** busybox-1.23.1/networking/udhcp/Config.src.orig	2015-01-27 17:48:58.000000000 +0900
+--- busybox-1.23.1/networking/udhcp/Config.src	2015-10-06 18:36:55.176256217 +0900
+***************
+*** 115,120 ****
+--- 115,128 ----
+  	  Bigger values result in bigger code. Levels above 1
+  	  are very verbose and useful for debugging only.
+  
++ config FEATURE_UDHCP_RFC4833
++ 	bool "Support for RFC4833 posix timezone string (experimental)"
++ 	default y
++ 	depends on UDHCPD || UDHCPC
++ 	help
++ 	  If selected, both client and server will support passing
++ 	  of a posix timezone string via option 100, specified in RFC 4833.
++ 
+  config FEATURE_UDHCP_RFC3397
+  	bool "Support for RFC3397 domain search (experimental)"
+  	default y

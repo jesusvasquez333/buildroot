@@ -1,0 +1,64 @@
+*** linux-3.18.9/kernel/signal.c.orig	2015-03-10 21:42:13.532986532 -0700
+--- linux-3.18.9/kernel/signal.c	2015-03-11 12:24:33.149888288 -0700
+***************
+*** 1317,1323 ****
+   * send the signal on exit of the trap.
+   */
+  #ifdef ARCH_RT_DELAYS_SIGNAL_SEND
+! 	if (in_atomic()) {
+  		if (WARN_ON_ONCE(t != current))
+  			return 0;
+  		if (WARN_ON_ONCE(t->forced_info.si_signo))
+--- 1317,1323 ----
+   * send the signal on exit of the trap.
+   */
+  #ifdef ARCH_RT_DELAYS_SIGNAL_SEND
+! 	if (in_atomic() || irqs_disabled()) {
+  		if (WARN_ON_ONCE(t != current))
+  			return 0;
+  		if (WARN_ON_ONCE(t->forced_info.si_signo))
+*** linux-3.18.9/arch/arm/kernel/signal.c.orig	2015-03-10 21:42:11.625043336 -0700
+--- linux-3.18.9/arch/arm/kernel/signal.c	2015-03-11 12:24:33.433880100 -0700
+***************
+*** 596,601 ****
+--- 596,610 ----
+  				clear_thread_flag(TIF_UPROBE);
+  				uprobe_notify_resume(regs);
+  			} else {
++ 
++ #ifdef ARCH_RT_DELAYS_SIGNAL_SEND
++ 				if (unlikely(current->forced_info.si_signo)) {
++ 					struct task_struct *t = current;
++ 					force_sig_info(t->forced_info.si_signo,	&t->forced_info, t);
++ 					t->forced_info.si_signo = 0;
++ 				}
++ #endif
++ 
+  				clear_thread_flag(TIF_NOTIFY_RESUME);
+  				tracehook_notify_resume(regs);
+  			}
+*** linux-3.18.9/arch/arm/include/asm/signal.h.orig	2015-03-06 14:53:42.000000000 -0800
+--- linux-3.18.9/arch/arm/include/asm/signal.h	2015-03-11 12:24:33.433880100 -0700
+***************
+*** 1,6 ****
+--- 1,20 ----
+  #ifndef _ASMARM_SIGNAL_H
+  #define _ASMARM_SIGNAL_H
+  
++ /*
++  * Because exceptions run with IRQs 
++  * disabled while calling arm_notify_die(), but arm_notify_die() may call
++  * force_sig_info() which will grab the signal spin_locks for the
++  * task, which in PREEMPT_RT_FULL are mutexes.  By defining
++  * ARCH_RT_DELAYS_SIGNAL_SEND the force_sig_info() will set
++  * TIF_NOTIFY_RESUME and set up the signal to be sent on exit of the
++  * trap.
++  */
++ #if defined(CONFIG_PREEMPT_RT_FULL)
++ #define ARCH_RT_DELAYS_SIGNAL_SEND
++ #endif
++ 
++ 
+  #include <uapi/asm/signal.h>
+  
+  /* Most things should be clean enough to redefine this at will, if care

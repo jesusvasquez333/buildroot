@@ -1,0 +1,97 @@
+#!/bin/sh
+
+# udhcpc script edited by Tim Riker <Tim@Rikers.org>
+
+[ -z "$1" ] && echo "Error: should be called from udhcpc" && exit 1
+
+RESOLV_CONF="/etc/resolv.conf"
+NTPD_CONF="/etc/default/ntpd"
+
+[ -n "$broadcast" ] && BROADCAST="broadcast $broadcast"
+[ -n "$subnet" ] && NETMASK="netmask $subnet"
+
+case "$1" in
+	deconfig)
+		umount -af -t nfs
+
+		/sbin/ifconfig $interface 0.0.0.0
+		;;
+
+	renew|bound)
+		/sbin/ifconfig $interface $ip $BROADCAST $NETMASK
+
+		if [ -n "$router" ] ; then
+			echo "deleting routers"
+			while route del default gw 0.0.0.0 dev $interface > /dev/null 2>&1 ; do
+				:
+			done
+
+			for i in $router ; do
+				route add default gw $i dev $interface
+			done
+		fi
+
+		echo -n > $RESOLV_CONF
+		[ -n "$domain" ] && echo search $domain >> $RESOLV_CONF
+		for i in $dns ; do
+			echo adding dns $i
+			echo nameserver $i >> $RESOLV_CONF
+		done
+
+		if [ -n "$hostname" -a "$hostname" != `hostname` ] ; then
+			echo "setting hostname: $hostname"
+			echo "$hostname" > /etc/hostname
+			hostname "$hostname"
+		fi
+
+		if [ -n "$ntpsrv" ] ; then
+ 			if [ -r $NTPD_CONF ] && [ "$ntpsrv" != "`( . $NTPD_CONF; echo -n $NTPSERVERS)`" ] ; then
+				echo "setting NTP servers in $NTPD_CONF: $ntpsrv"
+				sed -i -e 's/NTPSERVERS.*/NTPSERVERS="'"$ntpsrv"'"/g' $NTPD_CONF
+			fi
+			NTPSERVERS="$ntpsrv"
+		else
+			if [ -r $NTPD_CONF ] ; then
+				NTPSERVERS="`( . $NTPD_CONF; echo -n $NTPSERVERS)`"
+			fi
+		fi
+		if [ -n "$NTPSERVERS" ] ; then
+			echo "creating /etc/ntp.conf"
+			rm -f /etc/ntp.conf
+			for i in $NTPSERVERS ; do
+				echo "server $i" >> /etc/ntp.conf
+			done
+		fi
+
+		if [ -z "$IF_ROOTPATH" -a -n "$rootpath" ] ; then
+			IF_ROOTPATH="$rootpath";
+		fi
+
+		if [ -n "$IF_ROOTPATH" ] ; then
+			mntpt=`eval echo "$IF_ROOTPATH" | awk 'BEGIN{FS=":"}{print $3}'`;
+			fsline=`eval echo "$IF_ROOTPATH" | awk 'BEGIN{FS=":"}{print $1":"$2,$3,"nfs","ro,nolock,noac,soft",0,0}'`;
+			# Make sure mount point exists
+			mkdir -p "$mntpt"
+			if ! grep -q "$fsline" /etc/fstab ; then
+				# Remove old entry
+				echo "Replacing ROOTPATH entry in /etc/fstab"
+				sed -i -e '/^#ROOTPATH:/,/./d' /etc/fstab
+				echo "#ROOTPATH: -- DONT REMOVE THIS OR THE FOLLOWING LINE" >> /etc/fstab
+				echo "$fsline" >> /etc/fstab
+			fi
+		fi
+
+		# save bootfile for inittab entry to pick up later
+		if [ -n "$boot_file" ] ; then
+			echo "$boot_file" > /etc/bootfile
+		fi
+
+		# save timezone info
+		if [ -n "$posixtzstring" ] ; then
+			# no -n! terminating \n is required (man tzfile)
+			echo -e `tr -d '\012' < /etc/localtime.template`"$posixtzstring" > /etc/localtime
+		fi
+		;;
+esac
+
+exit 0
