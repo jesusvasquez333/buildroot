@@ -1,8 +1,8 @@
-os: 
-  - linux
+os: linux
 
-dist: 
-  - xenial
+dist: xenial
+
+language: minimal
 
 services:
   - docker
