@@ -36,5 +36,9 @@ ENV BUILD_HOME /home/build
 RUN mkdir -p ${BUILD_HOME}
 WORKDIR ${BUILD_HOME}
 
+# Create mock kernel folder.
+RUN mkdir -p /lib/modules/4.8.11-rt7
+RUN ln -s $KERNELDIR /lib/modules/4.8.11-rt7/build
+
 # Run make as default command
 CMD ["make"]
