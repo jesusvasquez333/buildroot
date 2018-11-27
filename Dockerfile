@@ -27,6 +27,10 @@ RUN ./site/scripts/br-installconf.sh -a ${ARCH}
 # Build
 RUN make
 
+# Prepare enviroment
+ENV CROSS_COMPILE ${TOP}/${BR_VER}/host/linux-${ARCH}/${ARCH}/usr/bin/${ARCH}-buildroot-linux-gnu-
+ENV KERNELDIR ${TOP}/${BR_VER}/buildroot/output/build/linux-4.8.11
+
 # Prepare building area
 ENV BUILD_HOME /home/build
 RUN mkdir -p ${BUILD_HOME}
