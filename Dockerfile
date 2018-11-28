@@ -17,7 +17,7 @@ RUN tar xfj download/${BR_VER}.tar.bz2
 RUN mv ${BR_VER} buildroot
 
 # Copy site-top configuration
-COPY site-top site-top
+ADD site-top.tar.gz .
 RUN ln -s ../site-top buildroot/site
 
 # Run SLAC preparation helper script

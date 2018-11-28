@@ -1,2 +1,0 @@
-Any patches underneath must have a '.patch' suffix for
-buildroot to recognize them as patches

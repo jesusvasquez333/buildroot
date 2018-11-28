@@ -1,4 +1,0 @@
-2016/06/20 (TS):
-  - should rework udhcp's 'site.script':
-    our modifications should go into a snippet
-    under default.script.d/
